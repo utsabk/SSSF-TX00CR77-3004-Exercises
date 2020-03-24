@@ -1,34 +1,26 @@
-'use strict';
-const jwt = require('jsonwebtoken');
-const passport = require('passport');
+"use strict";
+const jwt = require("jsonwebtoken");
+const passport = require("passport");
 
-const authenticate = (req, res) => {
-  console.log('I\'m inside login function');
-passport.authenticate('local',{sesson: false},(err, user, info)=>{
-  if(err || !user){
-    console.log(err)
-    return res.status(400).json({
-      message: 'Something is not right',
-      user : user
+const auth = (req, res, next) => {
+  passport.authenticate("local", { session: false }, (err, user, info) => {
+    console.log("error", err);
+    if (err) { return next(err); }
+    if (!user) { return res.status(400).json({
+      message: "Something is not right" });
+    }
+    req.login(user, { session: false }, err => {
+      if (err) {
+        res.send(err);
+      }
+
+      // generate a signed son web token with the contents of user object and return it in the response
+      const token = jwt.sign(user, "MY_SECRET_KEY");
+      return res.json({ user, token });
     });
-  }
-
-req.logIn(user, {session: false}, (err)=>{
-
-  console.log('I\'m inside req.login function');
-  if(err){
-    res.send(err);
-  }
-
-  // generate a signed son web token with the contents of user 
-  // object and return it in the response
- const token = jwt.sign(user, 'MY_SECRET_KEY');
- return res.json({user, token});
-});
-})(req, res);
-
+  })(req, res);
 };
-  
-  module.exports = {
-    authenticate,
-  };
+
+module.exports = {
+  auth
+};
